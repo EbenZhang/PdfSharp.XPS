@@ -1,0 +1,6 @@
+D:\Projects\PdfSharp.XPS\bin\Debug\PdfSharp.Xps.dll
+D:\Projects\PdfSharp.XPS\bin\Debug\PdfSharp.Xps.pdb
+D:\Projects\PdfSharp.XPS\bin\Debug\PdfSharp-WPF.dll
+D:\Projects\PdfSharp.XPS\obj\Debug\PdfSharp.Xps.csprojResolveAssemblyReference.cache
+D:\Projects\PdfSharp.XPS\obj\Debug\PdfSharp.Xps.dll
+D:\Projects\PdfSharp.XPS\obj\Debug\PdfSharp.Xps.pdb
