@@ -183,10 +183,6 @@ namespace PdfSharp.Xps
       {
         return;
       }
-      if (!createComparisonDocument)
-        {
-          return;
-        }
 
       try
       {
