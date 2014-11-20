@@ -25,7 +25,8 @@ namespace PdfSharp.Xps.Rendering
       WriteSaveState("begin Glyphs", glyphs.Name);
 
       // Transform also affects clipping and opacity mask
-      bool transformed = glyphs.RenderTransform != null;
+      bool transformed = glyphs.RenderTransform != null
+        && !glyphs.RenderTransform.Value.IsIdentity;
       if (transformed)
         WriteRenderTransform(glyphs.RenderTransform.Value);
 

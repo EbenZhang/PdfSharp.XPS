@@ -50,7 +50,10 @@
     <None Include="SampleXpsDocs\Basic.xps">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Include="SampleXpsDocs\cmyk.xps">
+    <None Include="SampleXpsDocs\FontStyle.xps">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="SampleXpsDocs\Cmyk.xps">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="SampleXpsDocs\Colorful.xps">

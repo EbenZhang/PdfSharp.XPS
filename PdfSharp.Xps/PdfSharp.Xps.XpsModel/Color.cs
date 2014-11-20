@@ -188,7 +188,7 @@ namespace PdfSharp.Xps.XpsModel
   {
     public static XColor ToXColor(this System.Windows.Media.Color c)
     {
-      return XColor.FromArgb(c.A, c);
+      return XColor.FromArgb(c.A, c.R, c.G, c.B);
     }
 
     public static Color ToXpsColor(this System.Windows.Media.Color c)
