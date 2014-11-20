@@ -10,6 +10,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Xps.Packaging;
 using IOPath = System.IO.Path;
+using System.Threading;
 
 namespace PdfSharp.Xps
 {
@@ -119,6 +120,40 @@ namespace PdfSharp.Xps
     public static void Convert(XpsDocument xpsDocument, string pdfFilename, int docIndex)
     {
 
+
+        var apartment = System.Threading.Thread.CurrentThread.GetApartmentState();
+        if (apartment != System.Threading.ApartmentState.STA)
+        {
+            System.Threading.AutoResetEvent evCompleted = new AutoResetEvent(false);
+            Thread t = new Thread(new ParameterizedThreadStart((evt) =>
+            {
+                try
+                {
+                    DoConvert(xpsDocument, pdfFilename, docIndex);
+                }
+                finally
+                {
+                    (evt as AutoResetEvent).Set();
+                }
+            }));
+            t.SetApartmentState(ApartmentState.STA);
+            t.Start(evCompleted);
+            evCompleted.WaitOne();
+            return;
+        }
+        else
+        {
+            DoConvert(xpsDocument, pdfFilename, docIndex);
+        }
+    }
+
+    /// <summary>
+    /// Implements the PDF file to XPS file conversion.
+    /// </summary>
+    
+
+private static void DoConvert(XpsDocument xpsDocument, string pdfFilename, int docIndex)
+{
       if (xpsDocument == null)
         throw new ArgumentNullException("xpsDocument");
 
@@ -157,12 +192,7 @@ namespace PdfSharp.Xps
         }
       }
       pdfDocument.Save(pdfFilename);
-    }
-
-    /// <summary>
-    /// Implements the PDF file to XPS file conversion.
-    /// </summary>
-    public static void Convert(string xpsFilename, string pdfFilename, int docIndex, bool createComparisonDocument)
+}public static void Convert(string xpsFilename, string pdfFilename, int docIndex, bool createComparisonDocument)
     {
       if (String.IsNullOrEmpty(xpsFilename))
         throw new ArgumentNullException("xpsFilename");
