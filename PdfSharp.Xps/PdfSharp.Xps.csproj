@@ -37,6 +37,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="PdfSharp-WPF, Version=1.32.2608.0, Culture=neutral, PublicKeyToken=f94615aa0424f9eb, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>.\PdfSharp-WPF.dll</HintPath>
+    </Reference>
     <Reference Include="PresentationCore">
       <RequiredTargetFramework>3.0</RequiredTargetFramework>
     </Reference>
@@ -219,12 +223,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="StrongnameKey.snk" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\PdfSharp\PdfSharp-WPF.csproj">
-      <Project>{02FCC0BB-2AA2-43BA-8D2F-66D168B87A1D}</Project>
-      <Name>PdfSharp-WPF</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
