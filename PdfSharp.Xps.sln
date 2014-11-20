@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdfSharp.Xps", "PdfSharp.Xps\PdfSharp.Xps.csproj", "{0BC3964B-A3BC-49D5-9B7C-463299B5A166}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PdfSharp.Xps.Test", "PdfSharp.Xps\PdfSharp.XPS.Test\PdfSharp.Xps.Test.csproj", "{51949E12-7F63-464B-9A78-B9D9D07864A7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0BC3964B-A3BC-49D5-9B7C-463299B5A166}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0BC3964B-A3BC-49D5-9B7C-463299B5A166}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0BC3964B-A3BC-49D5-9B7C-463299B5A166}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0BC3964B-A3BC-49D5-9B7C-463299B5A166}.Release|Any CPU.Build.0 = Release|Any CPU
+		{51949E12-7F63-464B-9A78-B9D9D07864A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{51949E12-7F63-464B-9A78-B9D9D07864A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{51949E12-7F63-464B-9A78-B9D9D07864A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{51949E12-7F63-464B-9A78-B9D9D07864A7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
