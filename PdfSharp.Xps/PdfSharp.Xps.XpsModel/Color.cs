@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using PdfSharp.Drawing;
 using PdfSharp.Internal;
 using PdfSharp.Xps;
 using PdfSharp.Xps.Rendering;
@@ -181,5 +182,23 @@ namespace PdfSharp.Xps.XpsModel
     ColorType colorType;
     SColor sRgbColor;
     SCColor scRgbColor;
+  }
+
+  static class ColorConverter
+  {
+    public static XColor ToXColor(this System.Windows.Media.Color c)
+    {
+      return XColor.FromArgb(c.A, c);
+    }
+
+    public static Color ToXpsColor(this System.Windows.Media.Color c)
+    {
+      return Color.FromArgb(c.A, c.R, c.G, c.B);
+    }
+
+    public static System.Windows.Media.Color AlphaToGray(this System.Windows.Media.Color color)
+    {
+      return System.Windows.Media.Color.FromArgb(255, color.A, color.A, color.A);
+    }
   }
 }

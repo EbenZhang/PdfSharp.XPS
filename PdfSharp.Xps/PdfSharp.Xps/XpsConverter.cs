@@ -1,26 +1,15 @@
-﻿using System;
+﻿using PdfSharp.Drawing;
+using PdfSharp.Pdf;
+using PdfSharp.Xps.Rendering;
+using System;
 using System.Diagnostics;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
-using System.IO.Packaging;
-using System.Windows;
+using System.Linq;
 using System.Windows.Documents;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using PdfSharp.Xps.XpsModel;
-using PdfSharp.Pdf;
-using PdfSharp.Pdf.Advanced;
-using PdfSharp.Drawing;
-using PdfSharp.Drawing.Pdf;
-using PdfSharp.Xps.Rendering;
-using FixedDocument = PdfSharp.Xps.XpsModel.FixedDocument;
-using FixedDocumentSequence = PdfSharp.Xps.XpsModel.FixedDocumentSequence;
-using FixedPage = PdfSharp.Xps.XpsModel.FixedPage;
+using System.Windows.Xps.Packaging;
 using IOPath = System.IO.Path;
-using Point = PdfSharp.Xps.XpsModel.Point;
-using Rect = PdfSharp.Xps.XpsModel.Rect;
-using Size = PdfSharp.Xps.XpsModel.Size;
 
 namespace PdfSharp.Xps
 {
@@ -52,7 +41,7 @@ namespace PdfSharp.Xps
     /// </summary>
     /// <param name="pdfDocument">The PDF document.</param>
     /// <param name="xpsDocumentPath">The XPS document path.</param>
-    public XpsConverter(PdfDocument pdfDocument, string xpsDocumentPath)  // TODO: a constructor with an Uri
+    public XpsConverter(PdfDocument pdfDocument, string xpsDocumentPath) // TODO: a constructor with an Uri
     {
       if (pdfDocument == null)
         throw new ArgumentNullException("pdfDocument");
@@ -60,84 +49,22 @@ namespace PdfSharp.Xps
         throw new ArgumentNullException("xpsDocumentPath");
 
       this.pdfDocument = pdfDocument;
-      this.xpsDocument = XpsDocument.Open(xpsDocumentPath);
+      this.xpsDocument = new XpsDocument(xpsDocumentPath, FileAccess.Read);
 
       Initialize();
     }
 
-    void Initialize()
+    private void Initialize()
     {
       this.context = new DocumentRenderingContext(this.pdfDocument);
     }
 
-    DocumentRenderingContext Context
+    private DocumentRenderingContext Context
     {
       get { return this.context; }
     }
-    DocumentRenderingContext context;
 
-    /// <summary>
-    /// HACK
-    /// </summary>
-    public PdfPage CreatePage(int xpsPageIndex)
-    {
-      FixedPage fixedPage = this.xpsDocument.GetDocument().GetFixedPage(xpsPageIndex);
-
-      PdfPage page = this.pdfDocument.AddPage();
-      page.Width = XUnit.FromPresentation(fixedPage.Width);
-      page.Height = XUnit.FromPresentation(fixedPage.Height);
-      return page;
-    }
-
-    /// <summary>
-    /// Renders an XPS document page to the specified PDF page.
-    /// </summary>
-    /// <param name="page">The target PDF page. The page must belong to the PDF document of this converter.</param>
-    /// <param name="xpsPageIndex">The zero-based XPS page number.</param>
-    public void RenderPage(PdfPage page, int xpsPageIndex)
-    {
-      if (page == null)
-        throw new ArgumentNullException("page");
-      if (!ReferenceEquals(page.Owner, this.pdfDocument))
-        throw new InvalidOperationException(PSXSR.PageMustBelongToPdfDocument);
-      // Debug.Assert(xpsPageIndex==0, "xpsPageIndex must be 0 at this stage of implementation.");
-      try
-      {
-        FixedPage fpage = this.xpsDocument.GetDocument().GetFixedPage(xpsPageIndex);
-
-        // ZipPackage pack = ZipPackage.Open(xpsFilename) as ZipPackage;
-        Uri uri = new Uri("/Documents/1/Pages/1.fpage", UriKind.Relative);
-        ZipPackagePart part = this.xpsDocument.Package.GetPart(uri) as ZipPackagePart;
-        if (part != null)
-        {
-          using (Stream stream = part.GetStream())
-          using (StreamReader sr = new StreamReader(stream))
-          {
-            string xml = sr.ReadToEnd();
-#if true && DEBUG
-            if (!String.IsNullOrEmpty(this.xpsDocument.Path))
-            {
-              string xmlPath =
-                IOPath.Combine(IOPath.GetDirectoryName(this.xpsDocument.Path),
-                               IOPath.GetFileNameWithoutExtension(this.xpsDocument.Path)) + ".xml";
-              using (StreamWriter sw = new StreamWriter(xmlPath))
-              {
-                sw.Write(xml);
-              }
-            }
-#endif
-            //XpsElement el = PdfSharp.Xps.Parsing.XpsParser.Parse(xml);
-            PdfRenderer renderer = new PdfRenderer();
-            renderer.RenderPage(page, fpage);
-          }
-        }
-      }
-      catch (Exception ex)
-      {
-        Debug.WriteLine(ex.ToString());
-        throw;
-      }
-    }
+    private DocumentRenderingContext context;
 
     /// <summary>
     /// Gets the PDF document of this converter.
@@ -146,7 +73,8 @@ namespace PdfSharp.Xps
     {
       get { return this.pdfDocument; }
     }
-    PdfDocument pdfDocument;
+
+    private PdfDocument pdfDocument;
 
     /// <summary>
     /// Gets the XPS document of this converter.
@@ -155,7 +83,8 @@ namespace PdfSharp.Xps
     {
       get { return this.xpsDocument; }
     }
-    XpsDocument xpsDocument;
+
+    private XpsDocument xpsDocument;
 
     /// <summary>
     /// Converts the specified PDF file into an XPS file. The new file is stored in the same directory.
@@ -190,34 +119,44 @@ namespace PdfSharp.Xps
     public static void Convert(XpsDocument xpsDocument, string pdfFilename, int docIndex)
     {
 
-        if (xpsDocument == null)
-            throw new ArgumentNullException("xpsDocument");
+      if (xpsDocument == null)
+        throw new ArgumentNullException("xpsDocument");
 
-        if (String.IsNullOrEmpty(pdfFilename))
-            throw new ArgumentNullException("pdfFilename");
+      if (String.IsNullOrEmpty(pdfFilename))
+        throw new ArgumentNullException("pdfFilename");
 
-        FixedDocument fixedDocument = xpsDocument.GetDocument();
-        PdfDocument pdfDocument = new PdfDocument();
-        PdfRenderer renderer = new PdfRenderer();
+      var seq = xpsDocument.GetFixedDocumentSequence();
+      var pdfDocument = new PdfDocument();
+      var renderer = new PdfRenderer();
 
-        int pageIndex = 0;
-        foreach (FixedPage page in fixedDocument.Pages)
+      int pageIndex = 0;
+
+      var refs = seq.References;
+
+      var docs = refs.Select(r => r.GetDocument(false));
+
+      foreach (var fixedDocument in docs)
+      {
+        foreach (var page in fixedDocument.Pages)
         {
-            if (page == null)
-                continue;
-            Debug.WriteLine(String.Format("  doc={0}, page={1}", docIndex, pageIndex));
-            PdfPage pdfPage = renderer.CreatePage(pdfDocument, page);
-            renderer.RenderPage(pdfPage, page);
-            pageIndex++;
+          if (page == null)
+            continue;
+          var fixedPage = page.GetPageRoot(false);
+          if (fixedPage == null)
+            continue;
+          Debug.WriteLine(String.Format("  doc={0}, page={1}", docIndex, pageIndex));
+          PdfPage pdfPage = renderer.CreatePage(pdfDocument, fixedPage);
+          renderer.RenderPage(pdfPage, fixedPage);
+          pageIndex++;
 
 #if DEBUG
-            // stop at page...
-            if (pageIndex == 50)
-                break;
+          // stop at page...
+          if (pageIndex == 50)
+            break;
 #endif
         }
-        pdfDocument.Save(pdfFilename);
-
+      }
+      pdfDocument.Save(pdfFilename);
     }
 
     /// <summary>
@@ -236,38 +175,24 @@ namespace PdfSharp.Xps
         pdfFilename += ".pdf";
       }
 
-      XpsDocument xpsDocument = null;
+      using (var xpsDocument = new XpsDocument(xpsFilename, FileAccess.Read))
+      {
+        Convert(xpsDocument, pdfFilename, docIndex);
+      }
+      if (!createComparisonDocument)
+      {
+        return;
+      }
+      if (!createComparisonDocument)
+        {
+          return;
+        }
+
       try
       {
-        xpsDocument = XpsDocument.Open(xpsFilename);
-        FixedDocument fixedDocument = xpsDocument.GetDocument();
-        PdfDocument pdfDocument = new PdfDocument();
-        PdfRenderer renderer = new PdfRenderer();
-
-        int pageIndex = 0;
-        foreach (FixedPage page in fixedDocument.Pages)
+        using (var xpsDoc = new XpsDocument(xpsFilename, FileAccess.Read))
         {
-          if (page == null)
-            continue;
-          Debug.WriteLine(String.Format("  doc={0}, page={1}", docIndex, pageIndex));
-          PdfPage pdfPage = renderer.CreatePage(pdfDocument, page);
-          renderer.RenderPage(pdfPage, page);
-          pageIndex++;
-
-#if DEBUG
-          // stop at page...
-          if (pageIndex == 50)
-            break;
-#endif
-        }
-        pdfDocument.Save(pdfFilename);
-        xpsDocument.Close();
-        xpsDocument = null;
-
-        if (createComparisonDocument)
-        {
-          System.Windows.Xps.Packaging.XpsDocument xpsDoc = new System.Windows.Xps.Packaging.XpsDocument(xpsFilename, FileAccess.Read);
-          System.Windows.Documents.FixedDocumentSequence docSeq = xpsDoc.GetFixedDocumentSequence();
+          var docSeq = xpsDoc.GetFixedDocumentSequence();
           if (docSeq == null)
             throw new InvalidOperationException("docSeq");
 
@@ -275,39 +200,45 @@ namespace PdfSharp.Xps
           PdfDocument pdfComparisonDocument = new PdfDocument();
 
 
-          pageIndex = 0;
-          foreach (PdfPage page in pdfDocument.Pages)
+          var pageIndex = 0;
+
+          var refs = docSeq.References;
+
+          var docs = refs.Select(r => r.GetDocument(false));
+
+          foreach (var doc in docs)
           {
-            if (page == null)
-              continue;
-            Debug.WriteLine(String.Format("  doc={0}, page={1}", docIndex, pageIndex));
+            foreach (var page in doc.Pages)
+            {
+              Debug.WriteLine(String.Format("  doc={0}, page={1}", docIndex, pageIndex));
 
-            PdfPage pdfPage = /*renderer.CreatePage(pdfComparisonDocument, page);*/pdfComparisonDocument.AddPage();
-            double width = page.Width;
-            double height = page.Height;
-            pdfPage.Width = page.Width * 2;
-            pdfPage.Height = page.Height;
+              PdfPage pdfPage = pdfComparisonDocument.AddPage();
+              double width = page.Width;
+              double height = page.Height;
+              pdfPage.Width = page.Width*2;
+              pdfPage.Height = page.Height;
 
 
-            DocumentPage docPage = docSeq.DocumentPaginator.GetPage(pageIndex);
-            //byte[] png = PngFromPage(docPage, 96);
+              DocumentPage docPage = docSeq.DocumentPaginator.GetPage(pageIndex);
+              //byte[] png = PngFromPage(docPage, 96);
 
-            BitmapSource bmsource = BitmapSourceFromPage(docPage, 96 * 2);
-            XImage image = XImage.FromBitmapSource(bmsource);
+              BitmapSource bmsource = BitmapSourceFromPage(docPage, 96*2);
+              XImage image = XImage.FromBitmapSource(bmsource);
 
-            XGraphics gfx = XGraphics.FromPdfPage(pdfPage);
-            form.PageIndex = pageIndex;
-            gfx.DrawImage(form, 0, 0, width, height);
-            gfx.DrawImage(image, width, 0, width, height);
+              XGraphics gfx = XGraphics.FromPdfPage(pdfPage);
+              form.PageIndex = pageIndex;
+              gfx.DrawImage(form, 0, 0, width, height);
+              gfx.DrawImage(image, width, 0, width, height);
 
-            //renderer.RenderPage(pdfPage, page);
-            pageIndex++;
+              //renderer.RenderPage(pdfPage, page);
+              pageIndex++;
 
 #if DEBUG
-            // stop at page...
-            if (pageIndex == 50)
-              break;
+              // stop at page...
+              if (pageIndex == 50)
+                break;
 #endif
+            }
           }
 
           string pdfComparisonFilename = pdfFilename;
@@ -320,45 +251,37 @@ namespace PdfSharp.Xps
           pdfComparisonDocument.PageLayout = PdfPageLayout.SinglePage;
           pdfComparisonDocument.Save(pdfComparisonFilename);
         }
-
       }
       catch (Exception ex)
       {
         Debug.WriteLine(ex.Message);
-        if (xpsDocument != null)
-          xpsDocument.Close();
         throw;
-      }
-      finally
-      {
-        if (xpsDocument != null)
-          xpsDocument.Close();
       }
     }
 
-
-    static public void SaveXpsPageToBitmap(string xpsFileName)
+    public static void SaveXpsPageToBitmap(string xpsFileName)
     {
-      System.Windows.Xps.Packaging.XpsDocument xpsDoc = new System.Windows.Xps.Packaging.XpsDocument(xpsFileName, System.IO.FileAccess.Read);
-      System.Windows.Documents.FixedDocumentSequence docSeq = xpsDoc.GetFixedDocumentSequence();
+      var xpsDoc = new XpsDocument(xpsFileName, System.IO.FileAccess.Read);
+      var docSeq = xpsDoc.GetFixedDocumentSequence();
 
       // You can get the total page count from docSeq.PageCount    
       for (int pageNum = 0; pageNum < docSeq.DocumentPaginator.PageCount; ++pageNum)
       {
         DocumentPage docPage = docSeq.DocumentPaginator.GetPage(pageNum);
         RenderTargetBitmap renderTarget =
-            new RenderTargetBitmap((int)docPage.Size.Width,
-                                    (int)docPage.Size.Height,
-                                    96, // WPF (Avalon) units are 96dpi based    
-                                    96,
-                                    System.Windows.Media.PixelFormats.Default);
+          new RenderTargetBitmap((int) docPage.Size.Width,
+            (int) docPage.Size.Height,
+            96, // WPF (Avalon) units are 96dpi based    
+            96,
+            PixelFormats.Default);
 
         renderTarget.Render(docPage.Visual);
 
-        BitmapEncoder encoder = new BmpBitmapEncoder();  // Choose type here ie: JpegBitmapEncoder, etc   
+        BitmapEncoder encoder = new BmpBitmapEncoder(); // Choose type here ie: JpegBitmapEncoder, etc   
         encoder.Frames.Add(BitmapFrame.Create(renderTarget));
 
-        FileStream pageOutStream = new FileStream(xpsFileName + ".Page" + pageNum + ".bmp", FileMode.Create, FileAccess.Write);
+        FileStream pageOutStream = new FileStream(xpsFileName + ".Page" + pageNum + ".bmp", FileMode.Create,
+          FileAccess.Write);
         encoder.Save(pageOutStream);
         pageOutStream.Close();
       }

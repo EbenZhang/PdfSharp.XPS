@@ -43,6 +43,12 @@ namespace PdfSharp.Xps.Rendering
       this.content.AppendFormat(CultureInfo.InvariantCulture, "{0:0.###} {1:0.###} {2:0.###} {3}", color.R / 255.0, color.G / 255.0, color.B / 255.0, op);
     }
 
+    public void WriteRgb(System.Windows.Media.Color color, string op)
+    {
+      WriteIndent();
+      this.content.AppendFormat(CultureInfo.InvariantCulture, "{0:0.###} {1:0.###} {2:0.###} {3}", color.R / 255.0, color.G / 255.0, color.B / 255.0, op);
+    }
+
     public void WriteMatrix(XMatrix matrix)
     {
       WriteIndent();

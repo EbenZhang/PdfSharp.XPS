@@ -1,16 +1,15 @@
-﻿using System;
-using System.Diagnostics;
-using System.Globalization;
-using System.Collections.Generic;
-using System.Text;
-using PdfSharp.Xps.XpsModel;
-using PdfSharp.Pdf;
+﻿using System.Windows.Media;
+using PdfSharp.Drawing;
+using PdfSharp.Fonts.OpenType;
 using PdfSharp.Internal;
 using PdfSharp.Pdf.Advanced;
 using PdfSharp.Pdf.Internal;
-using PdfSharp.Drawing;
-using PdfSharp.Drawing.Pdf;
-using PdfSharp.Fonts.OpenType;
+using PdfSharp.Xps.XpsModel;
+using System;
+using System.Diagnostics;
+using System.Globalization;
+using System.Text;
+using System.Windows.Documents;
 
 #pragma warning disable 414, 169, 649 // incomplete code state
 
@@ -28,7 +27,7 @@ namespace PdfSharp.Xps.Rendering
       // Transform also affects clipping and opacity mask
       bool transformed = glyphs.RenderTransform != null;
       if (transformed)
-        WriteRenderTransform(glyphs.RenderTransform);
+        WriteRenderTransform(glyphs.RenderTransform.Value);
 
       bool clipped = glyphs.Clip != null;
       if (clipped)
@@ -50,7 +49,9 @@ namespace PdfSharp.Xps.Rendering
       glyphs.FontRenderingEmSize = 1; // HACK: do not change model
 
 
-      bool boldSimulation = (glyphs.StyleSimulations & StyleSimulations.BoldSimulation) == StyleSimulations.BoldSimulation;
+      bool boldSimulation = 
+        (glyphs.StyleSimulations & StyleSimulations.BoldSimulation)
+        == StyleSimulations.BoldSimulation;
 
       // just a draft...
       if (boldSimulation)
@@ -61,14 +62,15 @@ namespace PdfSharp.Xps.Rendering
         XColor color = XColor.FromArgb(0, 0, 0);
         if (glyphs.Fill is SolidColorBrush)
         {
-          SolidColorBrush brush = glyphs.Fill as SolidColorBrush;
-          color = brush.Color;
+          var brush = glyphs.Fill as SolidColorBrush;
+          color = brush.Color.ToXColor();
         }
         WriteLiteral(String.Format(CultureInfo.InvariantCulture, "{0:0.###} {1:0.###} {2:0.###}  RG\n", color.R / 255.0, color.G / 255.0, color.B / 255.0));
         WriteLiteral("{0:0.###} w\n", emSize / 50);
       }
 
-      if ((glyphs.StyleSimulations & StyleSimulations.ItalicSimulation) == StyleSimulations.ItalicSimulation)
+      if ((glyphs.StyleSimulations & StyleSimulations.ItalicSimulation)
+        ==  StyleSimulations.ItalicSimulation)
       {
         textMatrix.SkewPrepend(-20, 0);
       }
@@ -169,13 +171,14 @@ namespace PdfSharp.Xps.Rendering
       }
       WriteRestoreState("end Glyphs", glyphs.Name);
     }
-
+    
     // ...on the way to handle Indices...
     private void WriteGlyphsInternal(Glyphs glyphs, string text)
     {
-      GlyphIndicesComplexity complexity = GlyphIndicesComplexity.None;
+      var complexity = GlyphIndicesComplexity.None;
+      var indices = new GlyphIndices(glyphs.Indices);
       if (glyphs.Indices != null)
-        complexity = glyphs.Indices.Complexity;
+        complexity = indices.Complexity;
       complexity = GlyphIndicesComplexity.ClusterMapping;
       switch (complexity)
       {
@@ -210,7 +213,6 @@ namespace PdfSharp.Xps.Rendering
       // TODO:
     }
 
-
     /// <summary>
     /// This is just a draft to see what to do in detail.
     /// </summary>
@@ -225,14 +227,16 @@ namespace PdfSharp.Xps.Rendering
       }
 #endif
 
-      bool boldSimulation = (glyphs.StyleSimulations & StyleSimulations.BoldSimulation) == StyleSimulations.BoldSimulation;
+      bool boldSimulation = 
+        (glyphs.StyleSimulations &
+        StyleSimulations.BoldSimulation) == StyleSimulations.BoldSimulation;
       double boldSimulationFactor = 1;
       if (boldSimulation)
         boldSimulationFactor = 1;
 
       bool RightToLeft = glyphs.BidiLevel % 2 == 1;  // TODOWPF: why is this a level?? what means "bidirectional nesting"?
 
-      GlyphIndices indices = glyphs.Indices;
+      GlyphIndices indices = new GlyphIndices(glyphs.Indices);
       if (indices == null)
         indices = new GlyphIndices();
       int codeIdx = 0;
@@ -369,7 +373,7 @@ namespace PdfSharp.Xps.Rendering
 
       bool RightToLeft = glyphs.BidiLevel % 2 == 1;  // TODOWPF: why is this a level?? what means "bidirectional nesting"?
 
-      GlyphIndices indices = glyphs.Indices;
+      GlyphIndices indices = new GlyphIndices(glyphs.Indices);
       if (indices == null)
         indices = new GlyphIndices();
       int codeIdx = 0;

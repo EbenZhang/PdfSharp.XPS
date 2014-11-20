@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Windows.Media;
 
 namespace PdfSharp.Xps.XpsModel
 {
@@ -8,7 +9,7 @@ namespace PdfSharp.Xps.XpsModel
   /// Creates an arbitrary affine matrix transformation that manipulates objects or coordinate systems
   /// in a two-dimensional plane.
   /// </summary>
-  class MatrixTransform : XpsElement
+  class MatrixTransform
   {
     internal MatrixTransform()
     {
@@ -34,8 +35,7 @@ namespace PdfSharp.Xps.XpsModel
 
     public static implicit operator Drawing.XMatrix(MatrixTransform transform)
     {
-      return new Drawing.XMatrix(transform.Matrix.m11, transform.Matrix.m12, transform.Matrix.m21, transform.Matrix.m22,
-        transform.Matrix.offsetX, transform.Matrix.offsetY);
+      return transform.Matrix.ToXMatrix();
     }
   }
 }

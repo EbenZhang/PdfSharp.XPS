@@ -1,12 +1,7 @@
-﻿using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Text;
-using PdfSharp.Xps.XpsModel;
+﻿using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.Advanced;
-using PdfSharp.Drawing;
-using PdfSharp.Drawing.Pdf;
+using System.Windows.Documents;
 
 namespace PdfSharp.Xps.Rendering
 {
@@ -32,8 +27,13 @@ namespace PdfSharp.Xps.Rendering
       page.Height = XUnit.FromPresentation(fixedPage.Height);
       return page;
     }
-
+    
     internal void RenderPage(PdfPage page, FixedPage fixedPage)
+    {
+      RenderElemsToPage(page, fixedPage);
+    }
+
+    internal void RenderElemsToPage(PdfPage page, FixedPage fixedPage)
     {
       this.page = page;
 
@@ -65,7 +65,7 @@ namespace PdfSharp.Xps.Rendering
       //Initialize();
 
       this.writer.BeginContent(false);
-      this.writer.WriteElements(fixedPage.Content);
+      this.writer.WriteElements(fixedPage.Children);
       this.writer.EndContent();
     }
 

@@ -1,13 +1,11 @@
-﻿using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Text;
-using PdfSharp.Xps.XpsModel;
+﻿using PdfSharp.Drawing;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.Advanced;
 using PdfSharp.Pdf.Internal;
-using PdfSharp.Drawing;
-using PdfSharp.Drawing.Pdf;
+using PdfSharp.Xps.XpsModel;
+using System.Diagnostics;
+using System.Text;
+using System.Windows.Media;
 
 namespace PdfSharp.Xps.Rendering
 {
@@ -22,11 +20,12 @@ namespace PdfSharp.Xps.Rendering
     LinearShadingBuilder(DocumentRenderingContext context) :
       base(context)
     { }
-
+    
     /// <summary>
     /// Builds a shading from a linear gradient brush.
     /// </summary>
-    public static PdfShading BuildShadingFromLinearGradientBrush(DocumentRenderingContext context, LinearGradientBrush brush)
+    public static PdfShading BuildShadingFromLinearGradientBrush(
+      DocumentRenderingContext context, LinearGradientBrush brush)
     {
       LinearShadingBuilder builder = new LinearShadingBuilder(context);
       PdfShading shading = builder.BuildShading(brush);
@@ -36,7 +35,8 @@ namespace PdfSharp.Xps.Rendering
     /// <summary>
     /// Builds a pattern from a linear gradient brush.
     /// </summary>
-    public static PdfShadingPattern BuildPatternFromLinearGradientBrush(DocumentRenderingContext context, LinearGradientBrush brush, XMatrix transform)
+    public static PdfShadingPattern BuildPatternFromLinearGradientBrush(
+      DocumentRenderingContext context, LinearGradientBrush brush, XMatrix transform)
     {
       LinearShadingBuilder builder = new LinearShadingBuilder(context);
       PdfShadingPattern pattern = builder.BuildShadingPattern(brush, transform);
@@ -46,7 +46,9 @@ namespace PdfSharp.Xps.Rendering
     /// <summary>
     /// Builds a form XObject from a linear gradient brush that uses transparency.
     /// </summary>
-    public static PdfFormXObject BuildFormFromLinearGradientBrush(DocumentRenderingContext context, LinearGradientBrush brush, PathGeometry geometry)
+    public static PdfFormXObject BuildFormFromLinearGradientBrush(
+      DocumentRenderingContext context,
+      LinearGradientBrush brush, PathGeometry geometry)
     {
       LinearShadingBuilder builder = new LinearShadingBuilder(context);
       PdfFormXObject pdfForm = builder.BuildForm(brush, geometry);
@@ -84,7 +86,7 @@ namespace PdfSharp.Xps.Rendering
       shading.Elements[PdfShading.Keys.Coords] = new PdfLiteral("[{0:0.####} {1:0.####} {2:0.####} {3:0.####}]", x1, y1, x2, y2);
 
       shading.Elements[PdfShading.Keys.Domain] = new PdfLiteral("[0 1]");
-      if (brush.SpreadMethod == SpreadMethod.Pad)
+      if (brush.SpreadMethod == GradientSpreadMethod.Pad)
         shading.Elements[PdfShading.Keys.Extend] = new PdfLiteral("[true true]");
       else
       {
@@ -123,7 +125,7 @@ namespace PdfSharp.Xps.Rendering
 
       return pattern;
     }
-
+    
     /// <summary>
     /// Builds a PdfFormXObject from the specified brush. 
     /// // If a gradient contains transparency, a soft mask is created an added to the specified graphic state.
@@ -221,13 +223,13 @@ namespace PdfSharp.Xps.Rendering
 
       return pdfForm;
     }
-
+    
     /// <summary>
     /// Builds the soft mask.
     /// </summary>
     PdfSoftMask BuildSoftMask(LinearGradientBrush brush)
     {
-      Debug.Assert(brush.GradientStops.HasTransparency);
+      Debug.Assert(brush.GradientStops.HasTransparency());
 
       XRect viewBox = new XRect(0, 0, 360, 480); // HACK
       //XForm xform = new XForm(Context.PdfDocument, viewBox);
@@ -346,7 +348,7 @@ namespace PdfSharp.Xps.Rendering
     /// </summary>
     PdfSoftMask BuildSoftMask(RadialGradientBrush brush)
     {
-      Debug.Assert(brush.GradientStops.HasTransparency);
+      Debug.Assert(brush.GradientStops.HasTransparency());
 
       XRect viewBox = new XRect(0, 0, 360, 480); // HACK
       //XForm xform = new XForm(Context.PdfDocument, viewBox);
@@ -568,8 +570,8 @@ namespace PdfSharp.Xps.Rendering
       {
         // Build a Type 2 function
         func.Elements["/FunctionType"] = new PdfInteger(2);  // Type 2 - Exponential Interpolation Function
-        Color clr0 = gradients[0].Color;
-        Color clr1 = gradients[1].Color;
+        var clr0 = gradients[0].Color;
+        var clr1 = gradients[1].Color;
         if (softMask)
         {
           func.Elements["/C0"] = new PdfLiteral("[" + PdfEncoders.ToString(clr0.ScA) + "]");
@@ -578,8 +580,8 @@ namespace PdfSharp.Xps.Rendering
         }
         else
         {
-          func.Elements["/C0"] = new PdfLiteral("[" + PdfEncoders.ToString(clr0, colorMode) + "]");
-          func.Elements["/C1"] = new PdfLiteral("[" + PdfEncoders.ToString(clr1, colorMode) + "]");
+          func.Elements["/C0"] = new PdfLiteral("[" + PdfEncoders.ToString(clr0.ToXColor(), colorMode) + "]");
+          func.Elements["/C1"] = new PdfLiteral("[" + PdfEncoders.ToString(clr1.ToXColor(), colorMode) + "]");
           func.Elements["/Range"] = new PdfLiteral("[0 1 0 1 0 1]");
         }
         func.Elements["/Domain"] = new PdfLiteral("[0 1]");
@@ -600,8 +602,8 @@ namespace PdfSharp.Xps.Rendering
         {
           PdfDictionary fn2 = new PdfDictionary();
           fn2.Elements["/FunctionType"] = new PdfInteger(2);
-          Color clr0 = gradients[idx - 1].Color;
-          Color clr1 = gradients[idx].Color;
+          var clr0 = gradients[idx - 1].Color;
+          var clr1 = gradients[idx].Color;
           if (softMask)
           {
             fn2.Elements["/C0"] = new PdfLiteral("[" + PdfEncoders.ToString(clr0.ScA) + "]");
@@ -610,8 +612,8 @@ namespace PdfSharp.Xps.Rendering
           }
           else
           {
-            fn2.Elements["/C0"] = new PdfLiteral("[" + PdfEncoders.ToString(clr0, colorMode) + "]");
-            fn2.Elements["/C1"] = new PdfLiteral("[" + PdfEncoders.ToString(clr1, colorMode) + "]");
+            fn2.Elements["/C0"] = new PdfLiteral("[" + PdfEncoders.ToString(clr0.ToXColor(), colorMode) + "]");
+            fn2.Elements["/C1"] = new PdfLiteral("[" + PdfEncoders.ToString(clr1.ToXColor(), colorMode) + "]");
             fn2.Elements["/Range"] = new PdfLiteral("[0 1 0 1 0 1]");
           }
           fn2.Elements["/Domain"] = new PdfLiteral("[0 1]");

@@ -1,45 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Windows.Media;
 
 namespace PdfSharp.Xps.XpsModel
 {
-  /// <summary>
-  /// Represents a collection of GradientStop objecs.
-  /// </summary>
-  class GradientStopCollection : List<GradientStop>
+  internal static class GradientStopCollectionHelper
   {
-    // Currently just a placeholder of a generic list.
-
-    /// <summary>
-    /// Gets a value indicating whether at least one color has an alpha value less than 1.
-    /// </summary>
-    public bool HasTransparency
+    public static bool HasTransparency(this GradientStopCollection collection)
     {
-      get
+      for (int idx = 0; idx < collection.Count; idx++)
       {
-        for (int idx = 0; idx < Count; idx++)
-        {
-          if (this[idx].Color.A != 255)
-            return true;
-        }
-        return false;
+        if (collection[idx].Color.A != 255)
+          return true;
       }
+      return false;
     }
-
     /// <summary>
     /// HACK: Gets the average alpha value.
     /// </summary>
-    public double GetAverageAlpha()
+    public static double GetAverageAlpha(this GradientStopCollection collection)
     {
-      double result=0;
-      for (int idx = 0; idx < Count; idx++)
+      double result = 0;
+      for (int idx = 0; idx < collection.Count; idx++)
       {
-        Color clr = this[idx].Color;
+        var clr = collection[idx].Color;
         result += clr.A / 255.0;
       }
-      result /= Count;
+      result /= collection.Count;
       return result;
     }
   }
+
 }

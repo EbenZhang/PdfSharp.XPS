@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Text;
+using System.Windows.Media;
 using PdfSharp.Pdf;
 using PdfSharp.Pdf.Advanced;
 using PdfSharp.Pdf.Internal;
@@ -155,100 +156,6 @@ namespace PdfSharp.Xps.Rendering
       }
     }
 
-    [Obsolete]
-    void RealizeRadialGradientBrush(RadialGradientBrush brush, XForm xform)
-    {
-      XMatrix matrix = new XMatrix(); // this.renderer.defaultViewMatrix;
-      //matrix.MultiplyPrepend(this.Transform);
-      matrix = this.currentTransform;
-      //matrix.MultiplyPrepend(XMatrix.CreateScaling(1.3, 1));
-      PdfShadingPattern pattern = new PdfShadingPattern(this.writer.Owner);
-      pattern.Elements[PdfShadingPattern.Keys.PatternType] = new PdfInteger(2); // shading pattern
-
-      // Setup shading
-      PdfShading shading = new PdfShading(this.writer.Owner);
-
-      PdfColorMode colorMode = PdfColorMode.Rgb; //this.document.Options.ColorMode;
-
-      PdfDictionary function = BuildShadingFunction(brush.GradientStops, colorMode);
-
-      shading.Elements[PdfShading.Keys.ShadingType] = new PdfInteger(3); // Radial shading
-      //if (colorMode != PdfColorMode.Cmyk)
-      shading.Elements[PdfShading.Keys.ColorSpace] = new PdfName("/DeviceRGB");
-      //else
-      //shading.Elements[Keys.ColorSpace] = new PdfName("/DeviceCMYK");
-
-      double x0 = brush.GradientOrigin.X;
-      double y0 = brush.GradientOrigin.Y;
-      double r0 = 0;
-      double x1 = brush.Center.X;
-      double y1 = brush.Center.Y;
-      double r1 = brush.RadiusX;
-
-      shading.Elements[PdfShading.Keys.Coords] =
-        new PdfLiteral("[{0:0.###} {1:0.###} {2:0.###} {3:0.###} {4:0.###} {5:0.###}]", x0, y0, r0, x1, y1, r1);
-
-      // old: Elements[Keys.Background] = new PdfRawItem("[0 1 1]");
-      // old: Elements[Keys.Domain] = 
-      shading.Elements[PdfShading.Keys.Function] = function;
-      shading.Elements[PdfShading.Keys.Extend] = new PdfLiteral("[true true]");
-
-      // Setup pattern
-      pattern.Elements[PdfShadingPattern.Keys.Shading] = shading;
-      pattern.Elements[PdfShadingPattern.Keys.Matrix] = PdfLiteral.FromMatrix(matrix); // new PdfLiteral("[" + PdfEncoders.ToString(matrix) + "]");
-
-      string name = this.writer.Resources.AddPattern(pattern);
-      this.writer.WriteLiteral("/Pattern cs\n", name);
-      this.writer.WriteLiteral("{0} scn\n", name);
-
-      double alpha = brush.Opacity * brush.GradientStops.GetAverageAlpha();
-      if (alpha < 1)
-      {
-#if true
-        PdfExtGState extGState = this.writer.Owner.ExtGStateTable.GetExtGStateNonStroke(alpha);
-        string gs = this.writer.Resources.AddExtGState(extGState);
-        this.writer.WriteLiteral("{0} gs\n", gs);
-#else
-        if (xform == null)
-        {
-          PdfExtGState extGState = this.writer.Owner.ExtGStateTable.GetExtGStateNonStroke(alpha);
-          string gs = this.writer.Resources.AddExtGState(extGState);
-          this.writer.WriteGraphicState(extGState);
-        }
-        else
-        {
-          //PdfFormXObject pdfForm = this.writer.Owner.FormTable.GetForm(form);
-          PdfFormXObject pdfForm = xform.pdfForm;
-          pdfForm.Elements.SetString("/@", "This is the Form XObject of the soft mask");
-
-          string formName = this.writer.Resources.AddForm(pdfForm);
-
-          PdfTransparencyGroupAttributes tgAttributes = new PdfTransparencyGroupAttributes(this.writer.Owner);
-          //this.writer.Owner.Internals.AddObject(tgAttributes);
-          tgAttributes.Elements.SetName(PdfTransparencyGroupAttributes.Keys.CS, "/DeviceRGB");
-
-          // Set reference to transparency group attributes
-          pdfForm.Elements.SetObject(PdfFormXObject.Keys.Group, tgAttributes);
-          pdfForm.Elements[PdfFormXObject.Keys.Matrix] = new PdfLiteral("[1.001 0 0 1.001 0.001 0.001]");
-
-
-          PdfSoftMask softmask = new PdfSoftMask(this.writer.Owner);
-          this.writer.Owner.Internals.AddObject(softmask);
-          softmask.Elements.SetString("/@", "This is the soft mask");
-          softmask.Elements.SetName(PdfSoftMask.Keys.S, "/Luminosity");
-          softmask.Elements.SetReference(PdfSoftMask.Keys.G, pdfForm);
-          //pdfForm.Elements.SetName(PdfFormXObject.Keys.Type, "Group");
-          //pdfForm.Elements.SetName(PdfFormXObject.Keys.ss.Ss.Type, "Group");
-
-          PdfExtGState extGState = new PdfExtGState(this.writer.Owner);
-          this.writer.Owner.Internals.AddObject(extGState);
-          extGState.Elements.SetReference(PdfExtGState.Keys.SMask, softmask);
-          this.writer.WriteGraphicState(extGState);
-        }
-#endif
-      }
-    }
-
     //void RealizeImageBrush(ImageBrush brush, XForm xform)
     //{
     //}
@@ -270,15 +177,15 @@ namespace PdfSharp.Xps.Rendering
       {
         // Build one Type 2 function
         func.Elements["/FunctionType"] = new PdfInteger(2); // Type 2 - Exponential Interpolation Function
-        Color clr0 = gradients[0].Color;
-        Color clr1 = gradients[1].Color;
+        var clr0 = gradients[0].Color;
+        var clr1 = gradients[1].Color;
         if (softMask)
         {
-          clr0 = Utils.AlphaToGray(clr0);
-          clr1 = Utils.AlphaToGray(clr1);
+          clr0 = clr0.AlphaToGray();
+          clr1 = clr1.AlphaToGray();
         }
-        func.Elements["/C0"] = new PdfLiteral("[" + PdfEncoders.ToString(clr0, colorMode) + "]");
-        func.Elements["/C1"] = new PdfLiteral("[" + PdfEncoders.ToString(clr1, colorMode) + "]");
+        func.Elements["/C0"] = new PdfLiteral("[" + PdfEncoders.ToString(clr0.ToXColor(), colorMode) + "]");
+        func.Elements["/C1"] = new PdfLiteral("[" + PdfEncoders.ToString(clr1.ToXColor(), colorMode) + "]");
         func.Elements["/Domain"] = new PdfLiteral("[0 1]");
         func.Elements["/N"] = new PdfInteger(1); // be linear
       }
@@ -297,15 +204,15 @@ namespace PdfSharp.Xps.Rendering
         {
           PdfDictionary fn2 = new PdfDictionary();
           fn2.Elements["/FunctionType"] = new PdfInteger(2);
-          Color clr0 = gradients[idx - 1].Color;
-          Color clr1 = gradients[idx].Color;
+          var clr0 = gradients[idx - 1].Color;
+          var clr1 = gradients[idx].Color;
           if (softMask)
           {
-            clr0 = Utils.AlphaToGray(clr0);
-            clr1 = Utils.AlphaToGray(clr1);
+            clr0 = clr0.AlphaToGray();
+            clr1 = clr1.AlphaToGray();
           }
-          fn2.Elements["/C0"] = new PdfLiteral("[" + PdfEncoders.ToString(clr0, colorMode) + "]");
-          fn2.Elements["/C1"] = new PdfLiteral("[" + PdfEncoders.ToString(clr1, colorMode) + "]");
+          fn2.Elements["/C0"] = new PdfLiteral("[" + PdfEncoders.ToString(clr0.ToXColor(), colorMode) + "]");
+          fn2.Elements["/C1"] = new PdfLiteral("[" + PdfEncoders.ToString(clr1.ToXColor(), colorMode) + "]");
           fn2.Elements["/Domain"] = new PdfLiteral("[0 1]");
           fn2.Elements["/N"] = new PdfInteger(1);
           //this.renderer.Owner.Internals.AddObject(fn2);

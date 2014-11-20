@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using PdfSharp.Internal;
-using PdfSharp.Xps.Parsing;
+﻿using PdfSharp.Internal;
+using System;
+using System.Globalization;
 
 namespace PdfSharp.Xps.XpsModel
 {
@@ -242,7 +240,6 @@ namespace PdfSharp.Xps.XpsModel
       //mapping.UOffset = Double.NaN;
       //mapping.VOffset = Double.NaN;
 
-#if true
       string[] commaSeparated = parts.Split(',');
       if (commaSeparated.Length > 0)
       {
@@ -267,43 +264,23 @@ namespace PdfSharp.Xps.XpsModel
         }
 
         if (commaSeparated.Length > 1 && !String.IsNullOrEmpty(commaSeparated[1]))
-          mapping.AdvanceWidth = XpsParser.ParseDouble(commaSeparated[1]);
+          mapping.AdvanceWidth = ParseDouble(commaSeparated[1]);
 
         if (commaSeparated.Length > 2 && !String.IsNullOrEmpty(commaSeparated[2]))
-          mapping.UOffset = XpsParser.ParseDouble(commaSeparated[2]);
+          mapping.UOffset = ParseDouble(commaSeparated[2]);
 
         if (commaSeparated.Length > 3 && !String.IsNullOrEmpty(commaSeparated[3]))
-          mapping.VOffset = XpsParser.ParseDouble(commaSeparated[3]);
+          mapping.VOffset = ParseDouble(commaSeparated[3]);
       }
-#else
-      string[] commaSeparated = parts.Split(',');
-      if (commaSeparated.Length > 0)
-      {
-        if (commaSeparated[0] != "")
-        {
-          // Just split the numbers
-          string[] tempStr = commaSeparated[0].Split(new char[] { '(', ')', ':' }, StringSplitOptions.RemoveEmptyEntries);
-          // Last number is the index
-          mapping.GlyphIndex = int.Parse(tempStr[tempStr.Length - 1]);
-
-          // First and second (if available) are the code unit count and glyph count)
-          if (tempStr.Length > 1)
-            int.TryParse(tempStr[0], out mapping.ClusterCodeUnitCount);
-          if (tempStr.Length > 2)
-            int.TryParse(tempStr[1], out mapping.ClusterGlyphCount);
-        }
-
-        if (commaSeparated.Length > 1)
-          double.TryParse(commaSeparated[1],out mapping.AdvanceWidth);  // BUG: InvariantCulture not used!
-
-        if (commaSeparated.Length > 2)
-          double.TryParse(commaSeparated[2], out mapping.UOffset);  // <-- must not be zero if not defined, but must keep NaN
-
-        if (commaSeparated.Length > 3)
-          double.TryParse(commaSeparated[3], out mapping.VOffset);
-      }
-#endif
       return mapping;
+    }
+
+    /// <summary>
+    /// Parses a double value element.
+    /// </summary>
+    internal static double ParseDouble(string value)
+    {
+      return Double.Parse(value.Replace(" ", ""), CultureInfo.InvariantCulture);
     }
   }
 }
