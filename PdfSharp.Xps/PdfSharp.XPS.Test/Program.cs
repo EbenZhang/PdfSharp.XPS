@@ -20,10 +20,7 @@ namespace PdfSharp.Xps.Test
       foreach (var xps in xpsFiles)
       {
         var targetFile = Path.Combine(targetDir, Path.GetFileNameWithoutExtension(xps) + ".pdf");
-        if (!xps.EndsWith("SharedResource.xps"))
-        {
-          PdfSharp.Xps.XpsConverter.Convert(xps, targetFile, 0);
-        }
+        PdfSharp.Xps.XpsConverter.Convert(xps, targetFile, 0);
       }
       Process.Start(targetDir);
     }
