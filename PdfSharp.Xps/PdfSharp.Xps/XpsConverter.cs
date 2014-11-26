@@ -119,41 +119,37 @@ namespace PdfSharp.Xps
     /// </summary>
     public static void Convert(XpsDocument xpsDocument, string pdfFilename, int docIndex)
     {
-
-
-        var apartment = System.Threading.Thread.CurrentThread.GetApartmentState();
-        if (apartment != System.Threading.ApartmentState.STA)
+      var apartment = System.Threading.Thread.CurrentThread.GetApartmentState();
+      if (apartment != System.Threading.ApartmentState.STA)
+      {
+        System.Threading.AutoResetEvent evCompleted = new AutoResetEvent(false);
+        Thread t = new Thread(new ParameterizedThreadStart((evt) =>
         {
-            System.Threading.AutoResetEvent evCompleted = new AutoResetEvent(false);
-            Thread t = new Thread(new ParameterizedThreadStart((evt) =>
-            {
-                try
-                {
-                    DoConvert(xpsDocument, pdfFilename, docIndex);
-                }
-                finally
-                {
-                    (evt as AutoResetEvent).Set();
-                }
-            }));
-            t.SetApartmentState(ApartmentState.STA);
-            t.Start(evCompleted);
-            evCompleted.WaitOne();
-            return;
-        }
-        else
-        {
+          try
+          {
             DoConvert(xpsDocument, pdfFilename, docIndex);
-        }
+          }
+          finally
+          {
+            (evt as AutoResetEvent).Set();
+          }
+        }));
+        t.SetApartmentState(ApartmentState.STA);
+        t.Start(evCompleted);
+        evCompleted.WaitOne();
+        return;
+      }
+      else
+      {
+        DoConvert(xpsDocument, pdfFilename, docIndex);
+      }
     }
 
     /// <summary>
     /// Implements the PDF file to XPS file conversion.
     /// </summary>
-    
-
-private static void DoConvert(XpsDocument xpsDocument, string pdfFilename, int docIndex)
-{
+    private static void DoConvert(XpsDocument xpsDocument, string pdfFilename, int docIndex)
+    {
       if (xpsDocument == null)
         throw new ArgumentNullException("xpsDocument");
 
@@ -192,7 +188,8 @@ private static void DoConvert(XpsDocument xpsDocument, string pdfFilename, int d
         }
       }
       pdfDocument.Save(pdfFilename);
-}public static void Convert(string xpsFilename, string pdfFilename, int docIndex, bool createComparisonDocument)
+    }
+    public static void Convert(string xpsFilename, string pdfFilename, int docIndex, bool createComparisonDocument)
     {
       if (String.IsNullOrEmpty(xpsFilename))
         throw new ArgumentNullException("xpsFilename");
@@ -241,14 +238,14 @@ private static void DoConvert(XpsDocument xpsDocument, string pdfFilename, int d
               PdfPage pdfPage = pdfComparisonDocument.AddPage();
               double width = page.Width;
               double height = page.Height;
-              pdfPage.Width = page.Width*2;
+              pdfPage.Width = page.Width * 2;
               pdfPage.Height = page.Height;
 
 
               DocumentPage docPage = docSeq.DocumentPaginator.GetPage(pageIndex);
               //byte[] png = PngFromPage(docPage, 96);
 
-              BitmapSource bmsource = BitmapSourceFromPage(docPage, 96*2);
+              BitmapSource bmsource = BitmapSourceFromPage(docPage, 96 * 2);
               XImage image = XImage.FromBitmapSource(bmsource);
 
               XGraphics gfx = XGraphics.FromPdfPage(pdfPage);
@@ -295,8 +292,8 @@ private static void DoConvert(XpsDocument xpsDocument, string pdfFilename, int d
       {
         DocumentPage docPage = docSeq.DocumentPaginator.GetPage(pageNum);
         RenderTargetBitmap renderTarget =
-          new RenderTargetBitmap((int) docPage.Size.Width,
-            (int) docPage.Size.Height,
+          new RenderTargetBitmap((int)docPage.Size.Width,
+            (int)docPage.Size.Height,
             96, // WPF (Avalon) units are 96dpi based    
             96,
             PixelFormats.Default);
